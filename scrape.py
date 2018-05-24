@@ -115,7 +115,7 @@ skip_to_course_with_index = max(args.skip_to_course, (1 if args.courses_only or 
 if not args.do_listing:
 	print('----- It\'s Learning dump script -----')
 	print('Created by: Bart van Blokland (bart.van.blokland@ntnu.no)')
-	print('Modified by: Fredrik Erlandsson (fer@bth.se)')
+	print('Modified by: Fredrik Erlandsson (fer@bth.se) and Dragos Ilie (dil@bth.se)')
 	print()
 	print('Greetings! This script will help you download your content off of It\'s Learning.')
 	print('We\'ll start by selecting a directory where all the files are going to be saved.')
@@ -201,7 +201,7 @@ itslearning_project_bulletin_base_url = {
 itslearning_bulletin_next_url = {
 	'bth': 'https://bth.itslearning.com/Bulletins/Page?courseId={}&boundaryLightBulletinId={}&boundaryLightBulletinCreatedTicks={}'}
 itslearning_folder_base_url = {
-	'bth': 'https://bth.itslearning.com/Folder/processfolder.aspx?FolderID='}
+	'bth': 'https://bth.itslearning.com/Folder/processfolder.aspx?FolderElementID='}
 itslearning_file_base_url = {
 	'bth': 'https://bth.itslearning.com/File/fs_folderfile.aspx?FolderFileID='}
 itslearning_assignment_base_url = {
@@ -2049,7 +2049,6 @@ def dump_courses_or_projects(institution, session, pathThusFar, itemList, itemNa
 			locationType = {'course': 1, 'project': 2}[item_type]
 
 			course_response = session.get(itslearning_course_base_url[institution].format(courseURL, locationType), allow_redirects=True)
-
 			root_folder_url_index = course_response.text.find(itslearning_folder_base_url[institution])
 			root_folder_end_index = course_response.text.find("'", root_folder_url_index + 1)
 			root_folder_url = course_response.text[root_folder_url_index:root_folder_end_index]
@@ -2081,7 +2080,6 @@ def dump_courses_or_projects(institution, session, pathThusFar, itemList, itemNa
 				if decision != 'skip':
 					print('Download has been aborted.')
 					sys.exit(0)
-
 
 			processFolder(institution, course_folder, root_folder_url, session, courseIndex, catch_up_state=catch_up_directions)
 		except Exception as e:
