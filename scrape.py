@@ -207,7 +207,7 @@ itslearning_file_base_url = {
 itslearning_assignment_base_url = {
 	'bth': 'https://bth.itslearning.com/essay/read_essay.aspx?EssayID='}
 itslearning_note_base_url = {
-	'bth': 'https://bth.itslearning.com/note/View_Note.aspx?NoteID='}
+	'bth': 'https://bth.itslearning.com/Note/View_Note.aspx?NoteID='}
 itslearning_discussion_base_url = {
 	'bth': 'https://bth.itslearning.com/discussion/list_discussions.aspx?DiscussionID='}
 itslearning_weblink_base_url = {
@@ -242,6 +242,8 @@ base64_jpeg_image_url = {
 	'bth': 'https://bth.itslearning.comdata:image/jpeg;base64,'}
 itslearning_unauthorized_url = {
 	'bth': 'https://bth.itslearning.com/not_authorized.aspx'}
+itslearning_learning_tool_custom_base_url = {
+	'bth': 'https://bth:itslearning.com/CustomActivity/CustomActivityOverview.aspx?CustomActivityId='}
 
 innsida_login_parameters = {'SessionExpired': 0}
 progress_file_location = os.path.join(os.getcwd(), 'saved_progress_state.txt')
@@ -630,6 +632,22 @@ def processLearningToolElement(institution, pathThusFar, elementURL, session):
 	except KeyError:
 		print('\tPage appears to have abnormal page structure. Falling back on dumping entire page as-is.')
 		bytesToTextFile(etree.tostring(element_document, pretty_print=True, encoding='utf-8'), dumpDirectory + '/page_contents' + output_text_extension)
+		
+def processCustomActivity(institution, pathThusFar, custom_activityURL, session):
+	custom_activity_response = session.get(custom_activityURL, allow_redirects=True)
+	custom_activity_document = fromstring(custom_activity_response.text)
+
+	custom_activity_title = custom_activity_document.get_element_by_id('ctl00_PageHeader_TT').text
+	custom_activity_title = sanitiseFilename(custom_activity_title)
+	print('\tDownloaded Custom Activity: ', custom_activity_title.encode('ascii', 'ignore'))
+
+	dumpDirectory = pathThusFar + '/Result - ' + custom_activity_title
+	dumpDirectory = sanitisePath(dumpDirectory)
+	dumpDirectory = makeDirectories(dumpDirectory)
+
+	custom_activity_ass = custom_activity_document.get_element_by_id('ctl00_ContentPlaceHolder_ContentContainer')
+
+	bytesToTextFile(etree.tostring(custom_activity_ass, pretty_print=True, encoding='utf-8'), dumpDirectory + '/page_contents' + output_text_extension)
 
 def processPicture(institution, pathThusFar, pictureURL, session):
 	picture_response = session.get(pictureURL, allow_redirects=True)
@@ -758,7 +776,7 @@ def processDiscussionForum(institution, pathThusFar, discussionURL, session):
 	while pages_remaining:
 
 		nextThreadElement = discussion_document.get_element_by_id('Threads_' + str(threadID))
-		if nextThreadElement[0].text is None or (not nextThreadElement[0].text.startswith('No threads') and not nextThreadElement[0].text.startswith('Ingen hovedinnlegg')):
+		if nextThreadElement[0].text is None or (not nextThreadElement[0].text.startswith('No threads') and not nextThreadElement[0].text.startswith('Inga trådar')):
 			while nextThreadElement is not None and nextThreadElement != False:
 				postURL = nextThreadElement[1][0].get('href')
 				postTitle = nextThreadElement[1][0].text
@@ -958,14 +976,13 @@ def processAssignment(institution, pathThusFar, assignmentURL, session):
 				#		print(i, ':', etree.tostring(submission_element[i]))
 				#	except IndexError:
 				#		pass
-						
-				no_group_index_offset = 0
-				if 'No group' in submission_element[2].text_content() or 'Ingen gruppe' in submission_element[2].text_content():
-					no_group_index_offset = 1
-				elif 'Manage' in submission_element[2].text_content() or 'Administrer' in submission_element[2].text_content():
-					no_group_index_offset = 1
-				elif 'New group' in submission_element[2].text_content() or 'Ny gruppe' in submission_element[2].text_content():
-					no_group_index_offset = 1
+
+				no_group_index_offset = 1
+
+				#Dirty code: Enable this if your site doesn't have an extra column between name and submitted time
+				#no_group_index_offset = 0
+
+
 
 				#print("Index offset:", no_group_index_offset)
 
@@ -992,16 +1009,19 @@ def processAssignment(institution, pathThusFar, assignmentURL, session):
 					students = [submission_element[1].text_content()]
 				if not students:
 					students = [submission_element[1].text_content()]
-				# Column 2: Submission date/time
-				submission_time = submission_element[2 + no_group_index_offset].text
-				# Column 3: Review date
+				# Column 2: synckey
+				synckey = submission_element[1 + no_group_index_offset].text
+				# Column 3: Submission time
+				submission_time = submission_element[2 + no_group_index_offset].text_content()
+				# Column 4: Review Date
 				review_date = submission_element[3 + no_group_index_offset].text
 				# Column 4: Status
 				status = submission_element[4 + no_group_index_offset].text_content()
 				# Column 5: Score
 				# If nobody answered the assignment, all of the next elements are not present and thus will fail
+
 				try:
-					if not ('Show' in submission_element[5 + no_group_index_offset].text_content() or 'Vis' in submission_element[5 + no_group_index_offset].text_content()):
+					if submission_element[5 + no_group_index_offset].text != None or submission_element[5 + no_group_index_offset].text != '':
 						score = submission_element[5 + no_group_index_offset].text
 					else:
 						# We have hit the assignment details link. This requires adjusting the offset
@@ -1013,7 +1033,7 @@ def processAssignment(institution, pathThusFar, assignmentURL, session):
 				# Column 6: Plagiarism status
 				if has_plagiarism_report:
 					try:
-						plagiarism_status = submission_element[6 + no_group_index_offset].text_content()
+						plagiarism_status = submission_element[5 + no_group_index_offset].text_content()
 					except IndexError:
 						plagiarism_status = None
 				else:
@@ -1026,9 +1046,9 @@ def processAssignment(institution, pathThusFar, assignmentURL, session):
 					details_page_url = None
 
 				has_submitted = submission_time is not None and not 'Not submitted' in submission_time and not 'Ikke levert' in submission_time
-				if submission_time is None:
+				if submission_time is None or submission_time == 'Not submitted':
 					submission_time = 'Not submitted.'
-				if review_date is None:
+				if review_date is None or review_date == '':
 					review_date = 'Not assessed.'
 				if score is None:
 					score = ''
@@ -1058,14 +1078,15 @@ def processAssignment(institution, pathThusFar, assignmentURL, session):
 				answer_info = 'Students:\n'
 				for student in students:
 					answer_info += '\t- ' + student + '\n'
-				answer_info += 'Submission Time: ' + submission_time + '\n'
+				answer_info += 'Sync key: ' + synckey + '\n'
+				answer_info += 'Submitted: ' + submission_time + '\n'
 				answer_info += 'Review Date: ' + review_date + '\n'
-				answer_info += 'Status: ' + status + '\n'
+				answer_info += 'Reviewed: ' + status + '\n'
 				answer_info += 'Score: ' + score + '\n'
-				answer_info += 'Plagiarism status: ' + plagiarism_status + '\n'
+				#answer_info += 'Plagiarism status: ' + plagiarism_status + '\n'
 				answer_info += 'Comments on assessment: \n\n' + comment_field_contents + '\n'
 
-				bytesToTextFile(answer_info.encode('utf-8'), answer_directory + '/answer' + output_text_extension)
+				bytesToTextFile(answer_info.encode('utf-8'), answer_directory + '/Answer' + output_text_extension)
 
 				# Again, only download files if there is a submission in the first place.
 				if has_submitted:
@@ -1469,7 +1490,7 @@ def processFolder(institution, pathThusFar, folderURL, session, courseIndex, fol
 			elif item_url.startswith('/essay'):
 				pass
 				processAssignment(institution, pathThusFar, itslearning_assignment_base_url[institution] + item_url.split('=')[1], session)
-			elif item_url.startswith('/note'):
+			elif item_url.startswith('/Note'):
 				pass
 				processNote(institution, pathThusFar, itslearning_note_base_url[institution] + item_url.split('=')[1], session)
 			elif item_url.startswith('/discussion'):
@@ -1490,6 +1511,9 @@ def processFolder(institution, pathThusFar, folderURL, session, courseIndex, fol
 			elif item_url.startswith('/Ntt'):
 				pass
 				processOnlineTest(institution, pathThusFar, itslearning_online_test_url[institution].format(item_url.split('=')[1]), item_url.split('=')[1], session)
+			elif item_url.startswith('/CustomActivity'):
+				pass
+				processCustomActivity(institution, pathThusFar, itslearning_learning_tool_custom_base_url[institution] + item_url.split('=')[1], session)
 			else:
 				print('Warning: Skipping unknown URL:', item_url.encode('ascii', 'ignore'))
 		except Exception:
