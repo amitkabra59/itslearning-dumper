@@ -201,7 +201,7 @@ itslearning_project_bulletin_base_url = {
 itslearning_bulletin_next_url = {
 	'bth': 'https://bth.itslearning.com/Bulletins/Page?courseId={}&boundaryLightBulletinId={}&boundaryLightBulletinCreatedTicks={}'}
 itslearning_folder_base_url = {
-	'bth': 'https://bth.itslearning.com/Folder/processfolder.aspx?FolderElementID='}
+	'bth': 'https://bth.itslearning.com/Folder/processfolder.aspx?FolderID='}
 itslearning_file_base_url = {
 	'bth': 'https://bth.itslearning.com/File/fs_folderfile.aspx?FolderFileID='}
 itslearning_assignment_base_url = {
