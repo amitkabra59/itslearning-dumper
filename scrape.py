@@ -201,7 +201,7 @@ itslearning_project_bulletin_base_url = {
 itslearning_bulletin_next_url = {
 	'bth': 'https://bth.itslearning.com/Bulletins/Page?courseId={}&boundaryLightBulletinId={}&boundaryLightBulletinCreatedTicks={}'}
 itslearning_folder_base_url = {
-	'bth': 'https://bth.itslearning.com/Folder/processfolder.aspx?FolderElementID='}
+	'bth': 'https://bth.itslearning.com/Folder/processfolder.aspx?FolderID='}
 itslearning_file_base_url = {
 	'bth': 'https://bth.itslearning.com/File/fs_folderfile.aspx?FolderFileID='}
 itslearning_assignment_base_url = {
@@ -243,7 +243,7 @@ base64_jpeg_image_url = {
 itslearning_unauthorized_url = {
 	'bth': 'https://bth.itslearning.com/not_authorized.aspx'}
 itslearning_learning_tool_custom_base_url = {
-	'bth': 'https://bth:itslearning.com/CustomActivity/CustomActivityOverview.aspx?CustomActivityId='}
+	'bth': 'https://bth.itslearning.com/CustomActivity/CustomActivityOverview.aspx?CustomActivityId='}
 
 innsida_login_parameters = {'SessionExpired': 0}
 progress_file_location = os.path.join(os.getcwd(), 'saved_progress_state.txt')
